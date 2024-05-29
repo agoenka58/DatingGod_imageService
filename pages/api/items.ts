@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 
 type Item = {
     id: number;
-    name: string;
+    item: string;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -17,7 +17,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             break;
         case 'POST':
             const newItem = req.body as Item;
-            const { data: insertedItem, error: insertError } = await supabase.from('items').insert(newItem).single();
+            console.log(newItem, req.body.item, "p")
+            const { data: insertedItem, error: insertError } = await supabase.from('items').insert([{ item: req.body.item, user_id: req.body.user_id }]);
             if (insertError) return res.status(500).json({ error: insertError.message });
             res.status(201).json(insertedItem);
             break;
