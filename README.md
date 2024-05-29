@@ -1,3 +1,9 @@
+## Set Up Supabase Storage
+Create a storage bucket in the Supabase dashboard:
+- Go to your Supabase project.
+- Navigate to the "Storage" tab.
+- Create a new bucket "images"
+
 ## Installation
 Clone the repository:
 ```bash
@@ -10,14 +16,15 @@ cd <repository_name>
 npm install
 ```
 
-## Set up environment variables: Create a .env.local file in the root directory and add your Supabase project URL and anon key:
+## Set up environment variables: 
+Create a .env.local file in the root directory and add your Supabase project URL and anon key:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 ## Getting Started
 
-First, run the development server:
+Run the development server:
 
 ```bash
 npm run dev
@@ -29,5 +36,5 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
 
