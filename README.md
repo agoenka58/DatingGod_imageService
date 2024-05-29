@@ -4,6 +4,9 @@ Create a storage bucket in the Supabase dashboard:
 - Navigate to the "Storage" tab.
 - Create a new bucket "images"
 
+## Get Remove.bg API key
+Sign up to get an API key @ https://www.remove.bg/
+
 ## Installation
 Clone the repository:
 ```bash
@@ -21,6 +24,7 @@ Create a .env.local file in the root directory and add your Supabase project URL
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+NEXT_PUBLIC_REMOVE_BG_KEY=your-removebg-key
 ```
 ## Getting Started
 
@@ -35,6 +39,19 @@ pnpm dev
 # or
 bun dev
 ```
+
+## Use Postman/hoppscotch to send POST requests
+https://hoppscotch.io/
+
+POST http://localhost:3000/api/upload
+
+headers: {
+content-type: multipart/form-data}
+
+body: {
+    user_id : 1234
+    file : (upload a .jpg)
+}
 
 
 

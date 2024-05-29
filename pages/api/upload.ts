@@ -1,6 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '../../lib/supabase';
 import * as formidable from 'formidable';
+import { RemoveBgResult, RemoveBgError, removeBackgroundFromImageUrl } from "remove.bg";
+
 
 import fs from 'fs';
 
@@ -10,47 +12,12 @@ export const config = {
     }
 };
 
-// const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-//     if (req.method === 'POST') {
-//         const form = new formidable.IncomingForm();
-//         form.parse(req, async (err, fields, files) => {
-//             if (err) {
-//                 return res.status(500).json({ error: err.message });
-//             }
-
-//             const file = files.file as unknown as formidable.File;
-//             const filePath = file.filepath;
-
-//             const fileContent = fs.readFileSync(filePath);
-//             const { data, error } = await supabase.storage
-//                 .from('images')
-//                 .upload(`public/${file.newFilename}`, fileContent, {
-//                     cacheControl: '3600',
-//                     upsert: false
-//                 });
-
-//             if (error) {
-//                 return res.status(500).json({ error: error.message });
-//             }
-
-//             const publicUrl = supabase.storage.from('images').getPublicUrl(`public/${file.newFilename}`);
-
-//             res.status(200).json({ url: publicUrl });
-//         });
-//     } else {
-//         res.setHeader('Allow', ['POST']);
-//         res.status(405).end(`Method ${req.method} Not Allowed`);
-//     }
-// };
-
-// export default handler;
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (req.method === 'POST') {
-        //console.log("req:", req)
+
         const form = new formidable.IncomingForm();
-        //console.log("form", form)
+
         form.parse(req, async (err, fields, files) => {
-            console.log("files:", files, fields.user_id)
             if (err) {
                 return res.status(500).json({ error: err.message });
             }
@@ -65,36 +32,51 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
             const fileContent = fs.readFileSync(filePath);
 
-            //saving original image
             await supabase.storage
                 .from('images')
-                .upload(`${fields.user_id}/${file.newFilename}_original`, fileContent, {
+                .upload(`${fields.user_id}/profile_original`, fileContent, {
                     cacheControl: '3600',
-                    upsert: false,
+                    upsert: true, //overwrite if exist
                 }).then()
                 .catch(err => res.status(500).json({ error: err.message }));
 
 
-            const publicUrl = supabase.storage.from('images').getPublicUrl(`public/${file.newFilename}`);
+            const publicUrl = supabase.storage.from('images').getPublicUrl(`${fields.user_id}/profile_original`);
 
-            //TODO: Remove bg
-            const processedFileContent = fileContent //remove bg API
+            //remove bg + save processed image
+            const url = publicUrl.data.publicUrl;
+            const outputFile = `./processed.png`;
+            const removeBGKey: string = process.env.NEXT_PUBLIC_REMOVE_BG_KEY || "removeBgApiKey"
 
-            //saving processed image
-            await supabase.storage
-                .from('images')
-                .upload(`${fields.user_id}/${file.newFilename}_processed`, processedFileContent, {
-                    cacheControl: '3600',
-                    upsert: false,
-                }).then()
-                .catch(err => res.status(500).json({ error: err.message }));
+            removeBackgroundFromImageUrl({
+                url,
+                apiKey: removeBGKey,
+                size: "regular",
+                type: "person",
+                outputFile
+            }).then(async (result: RemoveBgResult) => {
+                console.log(`File saved to ${outputFile}`);
+                //const base64img = result.base64img;
+                const processedFileContent = fs.readFileSync(outputFile);
+
+                //saving processed image
+                await supabase.storage
+                    .from('images')
+                    .upload(`${fields.user_id}/profile_bg_removed`, processedFileContent, {
+                        cacheControl: '3600',
+                        upsert: true,
+                    }).then()
+                    .catch(err => res.status(500).json({ error: err.message }));
+                const publicProcessedUrl = supabase.storage.from('images').getPublicUrl(`${fields.user_id}/profile_bg_removed`);
+
+                res.status(200).json({ url: publicUrl, processedUrl: publicProcessedUrl });
+
+            }).catch((errors: Array<RemoveBgError>) => {
+                console.log(JSON.stringify(errors));
+            });
+            //res.status(200).json({ url: publicUrl, processedUrl: "publicProcessedUrl" });
 
 
-
-
-            const publicProcessedUrl = supabase.storage.from('images').getPublicUrl(`public/${file.newFilename}`);
-
-            res.status(200).json({ url: publicUrl, processedUrl: publicProcessedUrl });
         });
     } else {
         res.setHeader('Allow', ['POST']);
