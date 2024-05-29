@@ -50,7 +50,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         const form = new formidable.IncomingForm();
         //console.log("form", form)
         form.parse(req, async (err, fields, files) => {
-            console.log("files:", files)
+            console.log("files:", files, fields.user_id)
             if (err) {
                 return res.status(500).json({ error: err.message });
             }
@@ -66,7 +66,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             const fileContent = fs.readFileSync(filePath);
             const { data, error } = await supabase.storage
                 .from('images')
-                .upload(`public/${file.newFilename}`, fileContent, {
+                .upload(`${fields.user_id}/${file.newFilename}_original`, fileContent, {
                     cacheControl: '3600',
                     upsert: false,
                 });
