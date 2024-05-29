@@ -64,20 +64,37 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             const filePath = file.filepath;
 
             const fileContent = fs.readFileSync(filePath);
-            const { data, error } = await supabase.storage
+
+            //saving original image
+            await supabase.storage
                 .from('images')
                 .upload(`${fields.user_id}/${file.newFilename}_original`, fileContent, {
                     cacheControl: '3600',
                     upsert: false,
-                });
+                }).then()
+                .catch(err => res.status(500).json({ error: err.message }));
 
-            if (error) {
-                return res.status(500).json({ error: error.message });
-            }
 
             const publicUrl = supabase.storage.from('images').getPublicUrl(`public/${file.newFilename}`);
 
-            res.status(200).json({ url: publicUrl });
+            //TODO: Remove bg
+            const processedFileContent = fileContent //remove bg API
+
+            //saving processed image
+            await supabase.storage
+                .from('images')
+                .upload(`${fields.user_id}/${file.newFilename}_processed`, processedFileContent, {
+                    cacheControl: '3600',
+                    upsert: false,
+                }).then()
+                .catch(err => res.status(500).json({ error: err.message }));
+
+
+
+
+            const publicProcessedUrl = supabase.storage.from('images').getPublicUrl(`public/${file.newFilename}`);
+
+            res.status(200).json({ url: publicUrl, processedUrl: publicProcessedUrl });
         });
     } else {
         res.setHeader('Allow', ['POST']);
